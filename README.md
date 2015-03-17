@@ -16,14 +16,10 @@ The only interface currently provided is:
 
 * [forkExecWait](#forkexecwait)`(args, callback)`: like
   `child_process.execFile`, but all operational errors are emitted
-  asynchronously, errors are descriptive error, and there's a crisper summary of
-  exactly what happened
+  asynchronously, errors are more descriptive, and there's a crisper summary of
+  exactly what happened.
 
 ## forkExecWait
-
-### Synopsis
-
-    forkExecWait(args, callback)
 
 Like the built-in `child_process.execFile`, this function forks a child process,
 exec's the requested command, waits for it to exit, and captures the full stdout
@@ -31,6 +27,10 @@ and stderr.  The file should be an executable on the caller's PATH.  It is
 _not_ passed through `bash -c` as would happen with `child_process.exec`.
 
 ### Arguments
+
+```javascript
+forkExecWait(args, callback)
+```
 
 The main argument is:
 
@@ -103,109 +103,129 @@ is non-trivial.  You should probably just use the message provided on the Error.
 
 Normal command:
 
-    forkExecWait({
-        'argv': [ 'echo', 'hello', 'world' ]
-    }, function (err, info) {
-        console.log(info);
-    });
+```javascript
+forkExecWait({
+    'argv': [ 'echo', 'hello', 'world' ]
+}, function (err, info) {
+    console.log(info);
+});
+```
 
-    { error: null,
-      status: 0,
-      signal: null,
-      stdout: 'hello world\n',
-      stderr: '' }
+```javascript
+{ error: null,
+  status: 0,
+  signal: null,
+  stdout: 'hello world\n',
+  stderr: '' }
+```
 
 Successful fork/exec, command fails:
 
-    forkExecWait({
-        'argv': [ 'grep', 'foobar' '/nonexistent_file' ]
-    }, function (err, info) {
-        console.log(info);
-    });
+```javascript
+forkExecWait({
+    'argv': [ 'grep', 'foobar' '/nonexistent_file' ]
+}, function (err, info) {
+    console.log(info);
+});
+```
 
-    { error: 
-       { [VError: exec "grep foobar /nonexistent_file": exited with status 2]
-         jse_shortmsg: 'exec "grep foobar /nonexistent_file"',
-         jse_summary: 'exec "grep foobar /nonexistent_file": exited with status 2',
-         jse_cause: 
-          { [VError: exited with status 2]
-            jse_shortmsg: 'exited with status 2',
-            jse_summary: 'exited with status 2',
-            message: 'exited with status 2' },
-         message: 'exec "grep foobar /nonexistent_file": exited with status 2' },
-      status: 2,
-      signal: null,
-      stdout: '',
-      stderr: 'grep: /nonexistent_file: No such file or directory\n' }
+```javascript
+{ error: 
+   { [VError: exec "grep foobar /nonexistent_file": exited with status 2]
+     jse_shortmsg: 'exec "grep foobar /nonexistent_file"',
+     jse_summary: 'exec "grep foobar /nonexistent_file": exited with status 2',
+     jse_cause: 
+      { [VError: exited with status 2]
+        jse_shortmsg: 'exited with status 2',
+        jse_summary: 'exited with status 2',
+        message: 'exited with status 2' },
+     message: 'exec "grep foobar /nonexistent_file": exited with status 2' },
+  status: 2,
+  signal: null,
+  stdout: '',
+  stderr: 'grep: /nonexistent_file: No such file or directory\n' }
+```
 
 Failed fork/exec: command not found:
 
-    forkExecWait({
-        'argv': [ 'nonexistent', 'command' ]
-    }, function (err, info) {
-        console.log(info);
-    });
+```javascript
+forkExecWait({
+    'argv': [ 'nonexistent', 'command' ]
+}, function (err, info) {
+    console.log(info);
+});
+```
 
-    { error: 
-       { [VError: exec "nonexistent command": spawn nonexistent ENOENT]
-         jse_shortmsg: 'exec "nonexistent command"',
-         jse_summary: 'exec "nonexistent command": spawn nonexistent ENOENT',
-         jse_cause: 
-          { [Error: spawn nonexistent ENOENT]
-            code: 'ENOENT',
-            errno: 'ENOENT',
-            syscall: 'spawn nonexistent',
-            path: 'nonexistent',
-            cmd: 'nonexistent command' },
-         message: 'exec "nonexistent command": spawn nonexistent ENOENT' },
-      status: null,
-      signal: null,
-      stdout: '',
-      stderr: '' }
+```javascript
+{ error: 
+   { [VError: exec "nonexistent command": spawn nonexistent ENOENT]
+     jse_shortmsg: 'exec "nonexistent command"',
+     jse_summary: 'exec "nonexistent command": spawn nonexistent ENOENT',
+     jse_cause: 
+      { [Error: spawn nonexistent ENOENT]
+        code: 'ENOENT',
+        errno: 'ENOENT',
+        syscall: 'spawn nonexistent',
+        path: 'nonexistent',
+        cmd: 'nonexistent command' },
+     message: 'exec "nonexistent command": spawn nonexistent ENOENT' },
+  status: null,
+  signal: null,
+  stdout: '',
+  stderr: '' }
+```
 
 Failed fork/exec: command is not executable (note: Node throws on this, while
 this library emits an error asynchronously, since this is an operational error):
 
-    forkExecWait({
-        'argv': [ '/dev/null' ]
-    }, function (err, info) {
-        console.log(info);
-    });
+```javascript
+forkExecWait({
+    'argv': [ '/dev/null' ]
+}, function (err, info) {
+    console.log(info);
+});
+```
 
-    { error: 
-       { [VError: exec "/dev/null": spawn EACCES]
-         jse_shortmsg: 'exec "/dev/null"',
-         jse_summary: 'exec "/dev/null": spawn EACCES',
-         jse_cause: { [Error: spawn EACCES] code: 'EACCES', errno: 'EACCES', syscall: 'spawn' },
-         message: 'exec "/dev/null": spawn EACCES' },
-      status: null,
-      signal: null,
-      stdout: '',
-      stderr: '' }
+```javascript
+{ error: 
+   { [VError: exec "/dev/null": spawn EACCES]
+     jse_shortmsg: 'exec "/dev/null"',
+     jse_summary: 'exec "/dev/null": spawn EACCES',
+     jse_cause: { [Error: spawn EACCES] code: 'EACCES', errno: 'EACCES', syscall: 'spawn' },
+     message: 'exec "/dev/null": spawn EACCES' },
+  status: null,
+  signal: null,
+  stdout: '',
+  stderr: '' }
+```
 
 Command times out (killed by our SIGKILL after 3 seconds):
 
-    forkExecWait({
-        'argv': [ 'sleep', '4' ],
-        'timeout': 3000,
-    }, function (err, info) {
-        console.log(info);
-    });
+```javascript
+forkExecWait({
+    'argv': [ 'sleep', '4' ],
+    'timeout': 3000,
+}, function (err, info) {
+    console.log(info);
+});
+```
 
-    { error: 
-       { [VError: exec "sleep 2": unexpectedly terminated by signal SIGKILL]
-         jse_shortmsg: 'exec "sleep 2"',
-         jse_summary: 'exec "sleep 2": unexpectedly terminated by signal SIGKILL',
-         jse_cause: 
-          { [VError: unexpectedly terminated by signal SIGKILL]
-            jse_shortmsg: 'unexpectedly terminated by signal SIGKILL',
-            jse_summary: 'unexpectedly terminated by signal SIGKILL',
-            message: 'unexpectedly terminated by signal SIGKILL' },
-         message: 'exec "sleep 2": unexpectedly terminated by signal SIGKILL' },
-      status: null,
-      signal: 'SIGKILL',
-      stdout: '',
-      stderr: '' }
+```javascript
+{ error: 
+   { [VError: exec "sleep 2": unexpectedly terminated by signal SIGKILL]
+     jse_shortmsg: 'exec "sleep 2"',
+     jse_summary: 'exec "sleep 2": unexpectedly terminated by signal SIGKILL',
+     jse_cause: 
+      { [VError: unexpectedly terminated by signal SIGKILL]
+        jse_shortmsg: 'unexpectedly terminated by signal SIGKILL',
+        jse_summary: 'unexpectedly terminated by signal SIGKILL',
+        message: 'unexpectedly terminated by signal SIGKILL' },
+     message: 'exec "sleep 2": unexpectedly terminated by signal SIGKILL' },
+  status: null,
+  signal: 'SIGKILL',
+  stdout: '',
+  stderr: '' }
+```
 
 # Contributions
 
