@@ -21,7 +21,7 @@ The only interface currently provided is:
 
 ## forkExecWait
 
-Synopsis:
+### Synopsis
 
     forkExecWait(args, callback)
 
@@ -29,6 +29,8 @@ Like the built-in `child_process.execFile`, this function forks a child process,
 exec's the requested command, waits for it to exit, and captures the full stdout
 and stderr.  The file should be an executable on the caller's PATH.  It is
 _not_ passed through `bash -c` as would happen with `child_process.exec`.
+
+### Arguments
 
 The main argument is:
 
@@ -49,10 +51,14 @@ The following arguments have the same semantics as for Node's built-in
 * **uid** (int): uid for child process
 * **gid** (int): gid for child process
 
+### Return value
+
 The return value is the same as `child_process.execFile` except when that
 function would throw an exception, in which case this function will return
 `null` and the error that would have been thrown is instead emitted to the
 callback (as you'd probably have expected Node to do).
+
+### Callback
 
 The callback is invoked as `callback(err, info)`, where `info` always has
 properties:
@@ -68,7 +74,32 @@ properties:
 * **stderr**: the string contents of the command's stderr.  This is unspecified
   if the process was not successfully exec'd.
 
-### forkExecWait Examples
+### Error handling
+
+As described above, the interface throws on programmer errors, and these should
+not be handled.  Operational errors are emitted asynchronously.
+
+There are four possible outcomes after successfully invoking this interface:
+
+1. Node failed to fork/exec the child process at all.
+   (`error` is non-null, `status` is null, and `signal` is null)
+2. The child process was successfully forked and exec'd, but terminated
+   abnormally due to a signal.
+   (`error` is non-null, `status` is null, and `signal` is non-null)
+3. The child process was successfully forked and exec'd and exited
+   with a status code other than 0.
+   (`error` is non-null, `status` is an integer, and `signal` is null).
+4. The child process was successfully forked and exec'd and exited with
+   a status code of 0.
+   (`error` is null, `status` is 0, and `signal` is null.)
+
+While this interface allows callers to easily tell which of these four cases
+occurred, most programs only need to think of this as either success (case (4))
+or failure (cases (1) through (3)).  This corresponds exactly to whether "error"
+is non-null.  Generating a descriptive error message for the three error cases
+is non-trivial.  You should probably just use the message provided on the Error.
+
+### Examples
 
 Normal command:
 
