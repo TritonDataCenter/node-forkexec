@@ -12,12 +12,52 @@ notably:
 * passing invalid arguments into the library results in thrown exceptions that
   _should not be caught_.  Don't pass bad values in.
 
-The only interface currently provided is:
+The only interfaces currently provided are:
 
 * [forkExecWait](#forkexecwait)`(args, callback)`: like
   `child_process.execFile`, but all operational errors are emitted
   asynchronously, errors are more descriptive, and there's a crisper summary of
   exactly what happened.
+* [interpretChildProcessResult](#interpretchildprocessresult)`(args)`:
+  lower-level function for taking the result of one of Node's `child_process`
+  functions and producing a normalized summary of what happened.
+
+**One of the biggest challenges in using Node's child\_process interfaces is
+properly interpreting the result.**  When you kick off a child process (as with
+fork/exec), there are basically four possible outcomes:
+
+1. Node failed to fork or exec the child process at all.
+   (`error` is non-null, `status` is null, and `signal` is null)
+2. The child process was successfully forked and exec'd, but terminated
+   abnormally due to a signal.
+   (`error` is non-null, `status` is null, and `signal` is non-null)
+3. The child process was successfully forked and exec'd and exited
+   with a status code other than 0.
+   (`error` is non-null, `status` is a non-zero integer, and `signal` is null).
+4. The child process was successfully forked and exec'd and exited with
+   a status code of 0.
+   (`error` is null, `status` is 0, and `signal` is null.)
+
+Most code doesn't handle (1) at all, since it usually results in the
+child\_process function throwing an exception rather than calling your callback.
+Most use-cases want to treat (1), (2), and (3) as failure cases and generate a
+descriptive error for them, but the built-in Errors are not very descriptive.
+
+The interfaces here attempt to make the common case very easy (providing a
+descriptive, non-null Error in cases (1) through (3), but not (4)), while still
+allowing more complex callers to easily determine exactly what happened.  These
+interfaces do this by taking the result of the underlying Node API function and
+producing an `info` object with properties:
+
+* **error**: null if the child process was created and terminated normally with
+  exit\_status 0.  This is a non-null, descriptive error if the child process was
+  not created at all, if the process was terminated abnormally by a signal, or
+  if the process was terminated normally with a non-zero exit status.
+* **status**: the wait(2) numeric status code if the child process exited
+  normally, and null otherwise.
+* **signal**: the name of the signal that terminated the child process if the
+* child process exited abnormally as a result of a signal, or null otherwise
+
 
 ## forkExecWait
 
@@ -63,12 +103,8 @@ callback (as you'd probably have expected Node to do).
 The callback is invoked as `callback(err, info)`, where `info` always has
 properties:
 
-* **error**: same as the callback argument (null on success, a descriptive error
-  on failure)
-* **status**: the wait(2) numeric status code if the child process exited
-  normally, and null otherwise.
-* **signal**: the name of the signal that terminated the child process, or null
-  if the process never exec'd or exited normally
+* **error**, **status**, **signal**: see description of "info" object above.
+  `info.error` is the same as the `err` argument.
 * **stdout**: the string contents of the command's stdout.  This is unspecified
   if the process was not successfully exec'd.
 * **stderr**: the string contents of the command's stderr.  This is unspecified
@@ -77,27 +113,8 @@ properties:
 ### Error handling
 
 As described above, the interface throws on programmer errors, and these should
-not be handled.  Operational errors are emitted asynchronously.
-
-There are four possible outcomes after successfully invoking this interface:
-
-1. Node failed to fork/exec the child process at all.
-   (`error` is non-null, `status` is null, and `signal` is null)
-2. The child process was successfully forked and exec'd, but terminated
-   abnormally due to a signal.
-   (`error` is non-null, `status` is null, and `signal` is non-null)
-3. The child process was successfully forked and exec'd and exited
-   with a status code other than 0.
-   (`error` is non-null, `status` is an integer, and `signal` is null).
-4. The child process was successfully forked and exec'd and exited with
-   a status code of 0.
-   (`error` is null, `status` is 0, and `signal` is null.)
-
-While this interface allows callers to easily tell which of these four cases
-occurred, most programs only need to think of this as either success (case (4))
-or failure (cases (1) through (3)).  This corresponds exactly to whether "error"
-is non-null.  Generating a descriptive error message for the three error cases
-is non-trivial.  You should probably just use the message provided on the Error.
+not be handled.  Operational errors are emitted asynchronously.  See the four
+possible outcomes described above for what those are.
 
 ### Examples
 
@@ -226,6 +243,41 @@ forkExecWait({
   stdout: '',
   stderr: '' }
 ```
+
+
+## interpretChildProcessResult
+
+This lower-level function takes the results of one of the `child_process`
+functions and produces the `info` object described above, including a more
+descriptive Error (if there was one).
+
+### Arguments
+
+```javascript
+interpretChildProcessResult(args)
+```
+
+Named arguments are:
+
+* **label** (string): label for the child process.  This can be just the command
+  (e.g., "grep"), the full argument string (e.g., "grep foo /my/files"), a
+  human-readable label (e.g., "grep subprocess"), or whatever else you want to
+  report with an optional error.
+* **error** (optional Error): error object reported by one of Node's
+  child_process functions.  Per the Node docs, this should be either `null` or
+  an instance of Error.
+
+### Return value
+
+The return value is an `info` object with the `error`, `status`, and `signal`
+properties described above.
+
+
+### Error handling
+
+As described above, the interface throws on programmer errors, and these should
+not be handled.  There are no operational errors for this interface.
+
 
 # Contributions
 
