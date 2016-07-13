@@ -90,6 +90,9 @@ The following arguments have the same semantics as for Node's built-in
 * **maxBuffer** (int): bytes of stdout and stderr that will be buffered
 * **uid** (int): uid for child process
 * **gid** (int): gid for child process
+* **includeStderr** (boolean): if the process exits with a non-zero status,
+  the output of `stderr` will be trimmed and included in the error message.
+  Defaults to `false`.
 
 ### Return value
 

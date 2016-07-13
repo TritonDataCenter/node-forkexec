@@ -1,0 +1,10 @@
+#!/bin/sh
+
+#
+# Emit a constant message to stderr and exit non-zero.  For use in the test
+# suite.
+#
+
+echo 'He has killed me, mother.' >&2
+exit 23
+
