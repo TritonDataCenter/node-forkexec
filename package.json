@@ -1,6 +1,6 @@
 {
 	"name": "forkexec",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"description": "sane child process library",
 	"main": "./lib/forkexec.js",
 	"author": "Joyent (joyent.com)",
